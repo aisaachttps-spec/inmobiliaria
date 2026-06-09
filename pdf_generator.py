@@ -7,8 +7,21 @@ from PIL import Image
 from labels import get_label, get_operation, get_property_type
 
 
+_LATIN1_SUBS = {
+    "\u20A1": "CRC",   # \u20A1 Costa Rica col\u00F3n
+    "\u20B1": "PHP",   # \u20B1 Philippine peso
+    "\u20A9": "KRW",   # \u20A9 Korean won
+    "\u20AA": "ILS",   # \u20AA Israeli shekel
+    "\u20B9": "INR",   # \u20B9 Indian rupee
+    "\u20AC": "EUR",   # \u20AC Euro
+    "\u00A3": "GBP",   # \u00A3 Pound (outside standard latin-1 for Helvetica)
+}
+
+
 def _strip_emojis(text: str) -> str:
-    """Remove emoji characters that FPDF/Helvetica cannot render."""
+    """Remove/replace characters that FPDF/Helvetica cannot render."""
+    for char, replacement in _LATIN1_SUBS.items():
+        text = text.replace(char, replacement)
     return re.sub(
         r'[\U00010000-\U0010ffff'
         r'\U00002702-\U000027B0'
@@ -253,7 +266,7 @@ def _render_gallery_page(pdf, photos: list, property_data: dict, grid_uniform: b
 
     tipo = property_data.get("tipo_propiedad", "")
     operacion = property_data.get("operacion", "")
-    precio_fmt = property_data.get("precio_formateado", "")
+    precio_fmt = _strip_emojis(property_data.get("precio_formateado", ""))
     ciudad = property_data.get("ciudad", "")
     pais_nombre = property_data.get("pais_nombre", "")
     location = f"{ciudad}, {pais_nombre}" if pais_nombre else ciudad
@@ -461,7 +474,7 @@ def _render_clasico(pdf, property_data: dict, photos: list, branding=None, lang:
     _render_logo(pdf, branding, x=160, y=5, max_w=35, max_h=12, bg=True)
 
     # Price on hero
-    precio_fmt = property_data.get("precio_formateado", "")
+    precio_fmt = _strip_emojis(property_data.get("precio_formateado", ""))
     pdf.set_text_color(*pdf.WHITE)
     pdf.set_font("Helvetica", "B", 26)
     pdf.set_xy(15, display_h - 28)
@@ -536,7 +549,7 @@ def _render_moderno(pdf, property_data: dict, photos: list, branding=None, lang:
 
     tipo = property_data.get("tipo_propiedad", "")
     operacion = property_data.get("operacion", "Venta").upper()
-    precio_fmt = property_data.get("precio_formateado", "")
+    precio_fmt = _strip_emojis(property_data.get("precio_formateado", ""))
     ciudad = property_data.get("ciudad", "")
     pais_nombre = property_data.get("pais_nombre", "")
     location = f"{ciudad}, {pais_nombre}" if pais_nombre else ciudad
